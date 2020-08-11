@@ -1,0 +1,28 @@
+{
+  "name": "ballena",
+  "version": "1.0.0",
+  "description": "Ballena Container System",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Kuhni Labs",
+  "license": "GPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/badillosoft/ballena.git"
+  },
+  "bugs": {
+    "url": "https://github.com/badillosoft/ballena/issues"
+  },
+  "homepage": "https://github.com/badillosoft/ballena#readme",
+  "files": [
+    "@panel",
+    "lib"
+  ],
+  "dependencies": {
+    "express": "^4.17.1"
+  },
+  "devDependencies": {}
+}
