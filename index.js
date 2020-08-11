@@ -149,7 +149,7 @@ const createInstance = server => {
                 const filename = apiName.replace(/^\//, "");
 
                 const protocol = {
-                    "@ballena": "v1.0",
+                    ballena: "v1.0",
                     container: name,
                     api: filename,
                     exists: true,
@@ -222,11 +222,14 @@ const createInstance = server => {
                     protocol.code = code;
                 }
 
+                const handler = typeof protocol.handler === "function" ? protocol.handler : () => protocol.handler;
                 try {
-                    protocol.output = await protocol.handler(protocol);
+                    protocol.output = await handler(protocol);
                 } catch (error) {
                     protocol.error = `${error}`.replace(/^Error:\s*/, "");
                 }
+
+                delete protocol.handler;
 
                 try {
                     respose.send(protocol);
