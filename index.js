@@ -29,44 +29,44 @@ const readFileAsync = (route, encoding = "utf-8", options = {}) => new Promise((
     fs.readFile(route, { encoding, ...options }, handleResult(resolve, reject));
 });
 
-const loadLibs = route => {
-    let libFilenames = [];
+// const loadLibs = route => {
+//     let libFilenames = [];
 
-    try {
-        libFilenames = fs.readdirSync(route);
-    } catch (error) {
-        libFilenames = [];
-    }
+//     try {
+//         libFilenames = fs.readdirSync(route);
+//     } catch (error) {
+//         libFilenames = [];
+//     }
 
-    const libModules = libFilenames.map(filename => {
-        return [
-            filename.replace(/\.js$/, ""),
-            require(path.join(route, `${filename}`))
-        ];
-    });
+//     const libModules = libFilenames.map(filename => {
+//         return [
+//             filename.replace(/\.js$/, ""),
+//             require(path.join(route, `${filename}`))
+//         ];
+//     });
 
-    const lib = libModules.reduce((lib, [name, fun]) => {
-        let spread = {};
-        if (typeof fun === "object" && fun.constructor === Object) {
-            spread = fun;
-            // if (fun.docs) spread[`@${name}/docs`] = fun.docs;
-        }
-        return {
-            ...lib,
-            ...spread,
-            [name]: fun,
-        };
-    }, {});
+//     const lib = libModules.reduce((lib, [name, fun]) => {
+//         let spread = {};
+//         if (typeof fun === "object" && fun.constructor === Object) {
+//             spread = fun;
+//             // if (fun.docs) spread[`@${name}/docs`] = fun.docs;
+//         }
+//         return {
+//             ...lib,
+//             ...spread,
+//             [name]: fun,
+//         };
+//     }, {});
 
-    return lib;
-};
+//     return lib;
+// };
 
-const libInternal = loadLibs(path.join(__dirname, "lib"));
-const libLocal = loadLibs(path.join(process.cwd(), "lib"));
+// const libInternal = loadLibs(path.join(__dirname, "lib"));
+// const libLocal = loadLibs(path.join(process.cwd(), "lib"));
 
 const lib = {
-    ...libInternal,
-    ...libLocal
+    // ...libInternal,
+    // ...libLocal
 };
 
 const createInstance = server => {
@@ -155,6 +155,10 @@ const createInstance = server => {
                     exists: true,
                     error: null,
                     result: null,
+                    async handler() {},
+                    output(handler) {
+                        protocol.handler = handler;
+                    },
                     logs: []
                 };
 
@@ -198,7 +202,12 @@ const createInstance = server => {
                         this.containers[name],
                         protocol,
                         input,
-                        options.local ? require : this.require,
+                        (name, ...params) => {
+                            if (name === "ballena") {
+                                return protocol;
+                            }
+                            return (options.local ? require : this.require)(name, ...params);
+                        },
                         request,
                         respose,
                         next,
@@ -211,7 +220,12 @@ const createInstance = server => {
                 } catch (error) {
                     protocol.error = `${error}`.replace(/^Error:\s*/, "");
                     protocol.code = code;
-                    console.log(error);
+                }
+
+                try {
+                    protocol.output = await protocol.handler(protocol);
+                } catch (error) {
+                    protocol.error = `${error}`.replace(/^Error:\s*/, "");
                 }
 
                 try {
@@ -274,4 +288,7 @@ module.exports = {
 
         return this.createInstance(server);
     },
+    output(handler) {
+        console.warn(`ballena/output: single mode is not supported`);
+    }
 };
