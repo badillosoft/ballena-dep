@@ -3,7 +3,11 @@ const path = require("path");
 const http = require("http");
 // const https = require("https");
 
+const dotenv = require("dotenv");
 const express = require("express");
+const bodyParser = require("body-parser");
+const cors = require("cors");
+const busboy = require("connect-busboy");
 
 const handleResult = (resolve, reject) => (error, result) => {
     if (error) {
@@ -69,6 +73,7 @@ const createInstance = server => {
     return {
         lib,
         containers: {},
+        require: server ? server.require : null,
         server,
         app: server ? server.app : null,
         protocol: server ? server.protocol : "virtual",
@@ -123,7 +128,7 @@ const createInstance = server => {
             options.basePath = options.local ? __dirname : options.basePath || process.cwd();
 
             const router = express.Router();
-            
+
             this.containers[name] = {
                 name,
                 options,
@@ -187,13 +192,13 @@ const createInstance = server => {
                         })();`
                     )(
                         this,
-                        name === "@panel" ? this.containers : {
+                        name === options.local ? this.containers : {
                             [name]: this.containers[name]
                         },
                         this.containers[name],
                         protocol,
                         input,
-                        require,
+                        options.local ? require : this.require,
                         request,
                         respose,
                         next,
@@ -231,12 +236,28 @@ const createInstance = server => {
 };
 
 module.exports = {
+    require,
     createInstance,
+    config(require) {
+        this.require = require;
+        dotenv.config(path.join(process.cwd(), ".env"));
+        // console.log("process", process.env.FACTURAPI_SERVER_KEY);
+    },
     createApp() {
         const app = express();
+
         app.get("/", (request, response) => {
             response.send(`Hello ${request.query.name || "you"}`);
         });
+
+        app.use(express.static(path.join(__dirname, "public")));
+        app.use("/static", express.static(path.join(__dirname, "static")));
+        app.use("/file", express.static(path.join(process.cwd(), "file")));
+        app.use("/cdn", express.static(path.join(process.cwd(), "cdn")));
+        app.use(cors());
+        app.use(bodyParser.json());
+        app.use(bodyParser.urlencoded({ limit: "50mb", extended: false }));
+        app.use(busboy());
 
         this.app = app;
 
@@ -249,6 +270,7 @@ module.exports = {
 
         server.app = app;
         server.protocol = "http";
+        server.require = this.require;
 
         return this.createInstance(server);
     },
