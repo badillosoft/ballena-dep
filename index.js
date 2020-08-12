@@ -46,7 +46,7 @@ const createInstance = (server, app = null) => {
             this.domain = domain;
 
             return await new Promise(resolve => {
-                this.server.listen(4000, () => {
+                this.server.listen(this.port, this.host, () => {
                     this.serverStartedAt = new Date();
                     console.log(`Server started at ${this.protocol}://${this.host}:${this.port}/`);
                     console.log(`                  ${this.protocol}://${this.domain}:${this.port}/`);
