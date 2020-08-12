@@ -80,6 +80,12 @@ const createInstance = server => {
         port: null,
         host: null,
         domain: null,
+        addLibrary(lib) {
+            this.lib = {
+                ...this.lib,
+                ...lib
+            };
+        },
         async start(port = 4000, host = "0.0.0.0", domain = "localhost") {
             this.port = port;
             this.host = host;
@@ -109,8 +115,8 @@ const createInstance = server => {
             await handle(this);
             await this.start(this.port, this.host, this.domain);
         },
-        panel() {
-            const container = this.openContainer("@ballena", {
+        addPanel() {
+            const container = this.createContainer("@ballena", {
                 local: true
             });
 
@@ -120,11 +126,11 @@ const createInstance = server => {
 
             return container;
         },
-        closeContainer(name) {
+        removeContainer(name) {
             if (!this.containers[name]) throw new Error(`ballena/error: invalid container "${name}"`);
             this.containers[name].closed = true;
         },
-        openContainer(name, options = {}) {
+        createContainer(name, options = {}) {
             options.basePath = options.local ? __dirname : options.basePath || process.cwd();
 
             const router = express.Router();
@@ -137,7 +143,7 @@ const createInstance = server => {
 
             router.use(`/${name}`, (request, response, next) => {
                 if (this.containers[name].closed) {
-                    response.status(404).send(`<pre>Cannot ${request.method} /${name}${request.path} (closed)</pre>`);
+                    response.status(404).send(`<pre>Cannot ${request.method} /${name}${request.path} (removed)</pre>`);
                     return;
                 }
                 next();
@@ -240,8 +246,8 @@ const createInstance = server => {
 
             return this.containers[name];
         },
-        container(name) {
-            const container = this.openContainer(name);
+        addContainer(name) {
+            const container = this.createContainer(name);
 
             if (this.app) {
                 this.app.use(container.router);

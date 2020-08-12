@@ -2,8 +2,8 @@ const name = await input("name");
 
 if (!name) throw new Error(`Invalid container name`);
 
-protocol.logs.push(`Load container ${name}`);
+protocol.logs.push(`Add container ${name}`);
 
-server.closeContainer(name);
+server.addContainer(name);
 
 return "ok";

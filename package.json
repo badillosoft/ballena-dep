@@ -1,5 +1,5 @@
 {
-  "name": "@dragonnomada/ballena",
+  "name": "@ballena/server",
   "version": "1.0.0",
   "description": "Ballena Container System",
   "main": "index.js",
@@ -24,8 +24,5 @@
     "dotenv": "^8.2.0",
     "express": "^4.17.1"
   },
-  "devDependencies": {},
-  "directories": {
-    "@ballena": "@ballena"
-  }
+  "devDependencies": {}
 }
