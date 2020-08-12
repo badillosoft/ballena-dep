@@ -9,6 +9,8 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const busboy = require("connect-busboy");
 
+dotenv.config(path.join(process.cwd(), ".env"));
+
 const handleResult = (resolve, reject) => (error, result) => {
     if (error) {
         reject(error);
