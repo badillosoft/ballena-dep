@@ -110,7 +110,7 @@ const createInstance = server => {
             await this.start(this.port, this.host, this.domain);
         },
         panel() {
-            const container = this.openContainer("@panel", {
+            const container = this.openContainer("@ballena", {
                 local: true
             });
 
