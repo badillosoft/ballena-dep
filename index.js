@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const http = require("http");
-// const https = require("https");
+const https = require("https");
 
 const dotenv = require("dotenv");
 const express = require("express");
@@ -17,65 +17,17 @@ const handleResult = (resolve, reject) => (error, result) => {
     resolve(result);
 };
 
-// const mkdirAsync = (route, recursive = true, options = {}) => new Promise((resolve, reject) => {
-//     fs.mkdir(route, { recursive, ...options }, handleResult(resolve, reject));
-// });
-
-// const readdirAsync = (route, options = {}) => new Promise((resolve, reject) => {
-//     fs.readdir(route, options, handleResult(resolve, reject));
-// });
-
 const readFileAsync = (route, encoding = "utf-8", options = {}) => new Promise((resolve, reject) => {
     fs.readFile(route, { encoding, ...options }, handleResult(resolve, reject));
 });
 
-// const loadLibs = route => {
-//     let libFilenames = [];
-
-//     try {
-//         libFilenames = fs.readdirSync(route);
-//     } catch (error) {
-//         libFilenames = [];
-//     }
-
-//     const libModules = libFilenames.map(filename => {
-//         return [
-//             filename.replace(/\.js$/, ""),
-//             require(path.join(route, `${filename}`))
-//         ];
-//     });
-
-//     const lib = libModules.reduce((lib, [name, fun]) => {
-//         let spread = {};
-//         if (typeof fun === "object" && fun.constructor === Object) {
-//             spread = fun;
-//             // if (fun.docs) spread[`@${name}/docs`] = fun.docs;
-//         }
-//         return {
-//             ...lib,
-//             ...spread,
-//             [name]: fun,
-//         };
-//     }, {});
-
-//     return lib;
-// };
-
-// const libInternal = loadLibs(path.join(__dirname, "lib"));
-// const libLocal = loadLibs(path.join(process.cwd(), "lib"));
-
-const lib = {
-    // ...libInternal,
-    // ...libLocal
-};
-
-const createInstance = server => {
+const createInstance = (server, app = null) => {
     return {
-        lib,
+        lib: {},
         containers: {},
         require: server ? server.require : null,
         server,
-        app: server ? server.app : null,
+        app: app || (server ? server.app : null),
         protocol: server ? server.protocol : "virtual",
         port: null,
         host: null,
@@ -263,10 +215,10 @@ module.exports = {
     createInstance,
     config(require) {
         this.require = require;
-        dotenv.config(path.join(process.cwd(), ".env"));
-        // console.log("process", process.env.FACTURAPI_SERVER_KEY);
     },
     createApp() {
+        dotenv.config(path.join(process.cwd(), ".env"));
+
         const app = express();
 
         app.get("/", (request, response) => {
@@ -297,7 +249,18 @@ module.exports = {
 
         return this.createInstance(server);
     },
-    output(handler) {
+    httpsServer(options) {
+        const app = this.createApp();
+
+        const server = https.createServer(options, app);
+
+        server.app = app;
+        server.protocol = "http";
+        server.require = this.require;
+
+        return this.createInstance(server);
+    },
+    output() {
         console.warn(`ballena/output: single mode is not supported`);
     }
 };
