@@ -128,10 +128,16 @@ Hello TODO view
 
 Ahora ya está configurado tu primer contenedor, agrega funcionalidad extra para ver el potencial de `@ballena/server`.
 
+### 3. TO-DO App
+
+Ahora configuraremos un ejemplo real para retener cosas por hacer en nuestro servidor.
+
 > `ambient/todo/api/add.js`
 
 ```js
 const title = input("title");
+
+if (!title) throw new Error("Invalid TODO title");
 
 container.todos = container.todos || [];
 
@@ -158,7 +164,7 @@ const todo = container.todos.find(todo => todo.id === id);
 
 if (!todo) throw new Error(`Invalid TODO with id ${id}`);
 
-todo.checked = true;
+todo.checked = !todo.checked;
 
 return todo;
 ```
@@ -194,15 +200,148 @@ return container.todos || [];
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>TODO App</title>
+    <title>Ballena - TODO App</title>
+
+    <!-- Tailwind CSS -->
+    <link href="https://unpkg.com/tailwindcss@^1.0/dist/tailwind.min.css" rel="stylesheet">
+
+    <!-- Fontawesome CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.14.0/css/all.min.css">
 
 </head>
 
-<body>
+<body style="opacity: 0; transition: opacity 1s;">
 
-    <h1>Hello TODO view</h1>
+    <div class="p-16">
+        <div class="flex items-center">
+            <div class="px-2">
+                <input @keydown="event.key !== 'Enter' || addTodo()" id="todoTitle" class="border-b pb-1 px-2"
+                    placeholder="Write something to-do...">
+            </div>
+            <div>
+                <button @click="addTodo()"
+                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded">add</button>
+            </div>
+        </div>
+        <div class="p-4">
+            <div :if="!todos || todos.length === 0">
+                <span class="text-gray-500 italic">There are not todos</span>
+            </div>
+            <ul>
+                <li :for="todos" :each="todo">
+                    <div class="flex items-center">
+                        <div class="px-2">
+                            <input @change="checkTodo(todo)" type="checkbox" $checked="todo.checked">
+                        </div>
+                        <div class="text-gray-600">
+                            <span $class="todo.checked ? 'line-through' : ''" $text="todo.title">TODO example</span>
+                        </div>
+                        <div class="px-2">
+                            <span @click="removeTodo(todo)" class="text-red-500 hover:text-red-700 cursor-pointer">
+                                <i class="fas fa-trash"></i>
+                            </span>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Sweet Alert 2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@9"></script>
+
+    <!-- Zen -->
+    <script src="https://badillosoft.github.io/zen/zen.js"></script>
+
+    <script>
+        handle("addTodo", async () => {
+            const context = await getContext();
+
+            const { error, result } = await post("/todo/api/add", {
+                title: select("#todoTitle").value
+            });
+
+            if (error) {
+                await Swal.fire("Error", error, "error");
+                return;
+            }
+
+            await setContext({
+                todos: [
+                    ...context.todos,
+                    result
+                ]
+            });
+
+            select("#todoTitle").select();
+        });
+
+        handle("checkTodo", async todo => {
+            const context = await getContext();
+
+            const { error, result } = await post("/todo/api/check", {
+                id: todo.id
+            });
+
+            if (error) {
+                await Swal.fire("Error", error, "error");
+                return;
+            }
+
+            await setContext({
+                todos: context.todos.map(_todo => {
+                    if (_todo.id === result.id) {
+                        return result;
+                    }
+                    return _todo;
+                })
+            });
+        });
+
+        handle("removeTodo", async todo => {
+            const context = await getContext();
+
+            const { error, result } = await post("/todo/api/delete", {
+                id: todo.id
+            });
+
+            if (error) {
+                await Swal.fire("Error", error, "error");
+                return;
+            }
+
+            await setContext({
+                todos: context.todos.filter(_todo => {
+                    return _todo.id !== result.id;
+                })
+            });
+        });
+
+        (async () => {
+
+            await setContext({
+                todos: []
+            });
+
+            const { error, result } = await post("/todo/api/all");
+
+            document.body.style.opacity = 1;
+
+            if (error) {
+                await Swal.fire("Error", error, "error");
+                return;
+            }
+
+            await setContext({
+                todos: result
+            });
+        })();
+    </script>
 
 </body>
 
 </html>
 ```
+
+Puedes consultar el proyecto completo en https://github.com/badillosoft/ballena-todo.
+

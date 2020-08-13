@@ -1,13 +1,13 @@
 {
   "name": "@ballena/server",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Ballena Container System",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "Kuhni Labs",
+  "author": "Alan Badillo Salas",
   "license": "MIT",
   "repository": {
     "type": "git",

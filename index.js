@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2020 Alan Badillo Salas <dragonnomada@gmail.com>
+ * MIT Licensed
+ */
+
 const fs = require("fs");
 const path = require("path");
 const http = require("http");
@@ -115,7 +120,7 @@ const createInstance = (server, app = null) => {
                     exists: true,
                     error: null,
                     result: null,
-                    async handler() {},
+                    async handler() { },
                     output(handler) {
                         protocol.handler = handler;
                     },
