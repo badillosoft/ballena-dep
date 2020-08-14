@@ -3,15 +3,13 @@
  * MIT Licensed
  */
 
-const name = input("name");
+const url = input("url");
 
 const fs = require("fs");
 const path = require("path");
 
-const filename = `${name}.${containers[name].token}.zip`;
-
 await new Promise((resolve, reject) => {
-    fs.unlink(path.join(process.cwd(), "temp", filename), (error, result) => {
+    fs.unlink(path.join(process.cwd(), url), (error, result) => {
         if (error) {
             reject(error);
             return;
@@ -20,4 +18,4 @@ await new Promise((resolve, reject) => {
     });
 });
 
-return `/temp/${filename}`;
+return "ok";

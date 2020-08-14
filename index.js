@@ -14,6 +14,8 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const busboy = require("connect-busboy");
 
+const fileUploadHandler = require("./lib/fileUploadHandler");
+
 dotenv.config(path.join(process.cwd(), ".env"));
 
 const handleResult = (resolve, reject) => (error, result) => {
@@ -45,10 +47,35 @@ const createInstance = (server, app = null) => {
                 ...lib
             };
         },
+        async loadContainers() {
+            await new Promise(resolve => {
+                fs.mkdir(".ballena", { recursive: true }, (error, result) => resolve({ error, result }))
+            });
+            
+            const containers = await new Promise((resolve, reject) => {
+                fs.readFile(
+                    path.join(process.cwd(), ".ballena", "containers.json"),
+                    (error, result) => {
+                        if (error) {
+                            reject(error);
+                            return;
+                        }
+                        resolve(JSON.parse(result));
+                    }
+                );
+            }).catch(() => ({}));
+
+            this.containers = {
+                ...this.containers,
+                ...containers,
+            };
+        },
         async start(port = 4000, host = "0.0.0.0", domain = "localhost") {
             this.port = port;
             this.host = host;
             this.domain = domain;
+
+            await this.loadContainers();
 
             return await new Promise(resolve => {
                 this.server.listen(this.port, this.host, () => {
@@ -95,6 +122,7 @@ const createInstance = (server, app = null) => {
             const router = express.Router();
 
             this.containers[name] = {
+                ...(this.containers[name] || {}),
                 name,
                 options,
                 router
@@ -102,13 +130,15 @@ const createInstance = (server, app = null) => {
 
             router.use(`/${name}`, (request, response, next) => {
                 if (!this.containers[name]) {
-                    response.status(404).send(`<pre>Cannot ${request.method} /${name}${request.path} (closed?)</pre>`);
+                    response.status(404).send(`<pre>Cannot ${request.method} /${name}${request.path} (closed)</pre>`);
                     return;
                 }
                 next();
             });
             router.use(`/${name}`, express.static(path.join(options.basePath, name, "view")));
             router.use(`/${name}/api/`, async (request, respose, next) => {
+                const files = await fileUploadHandler(request);
+
                 const apiName = request.path.replace(/\/$/g, "/index");
 
                 const filename = apiName.replace(/^\//, "");
@@ -120,6 +150,7 @@ const createInstance = (server, app = null) => {
                     exists: true,
                     error: null,
                     result: null,
+                    files,
                     async handler() { },
                     output(handler) {
                         protocol.handler = handler;
@@ -138,6 +169,7 @@ const createInstance = (server, app = null) => {
                         ...(request.body || {}),
                     };
                     if (!key || key === "self") return self;
+                    if (key === "files") return files;
                     return self[key];
                 };
 
@@ -150,6 +182,7 @@ const createInstance = (server, app = null) => {
                         "container",
                         "protocol",
                         "input",
+                        "files",
                         "require",
                         "request",
                         "response",
@@ -167,6 +200,7 @@ const createInstance = (server, app = null) => {
                         this.containers[name],
                         protocol,
                         input,
+                        files,
                         (name, ...params) => {
                             if (name === "ballena") {
                                 return protocol;

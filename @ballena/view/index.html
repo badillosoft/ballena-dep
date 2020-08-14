@@ -39,37 +39,129 @@
                 <div class="flex">
                     <div class="px-2">
                         <button class="bg-teal-500 hover:bg-teal-700 rounded text-white cursor-pointer py-1 px-2"
-                            @click="uploadContainer()">
+                            @click="selectFiles(self)">
                             <span>
                                 <i class="fas fa-upload"></i>
                             </span>
                         </button>
+                        <input @change="uploadContainer(self)" type="file" accept="*.zip" hidden multiple>
+                        <script>
+                            // #region handle confirmUpload
+                            handle("confirmUpload", async url => {
+                                const { error, result } = await post("api/container/upload.confirm", {
+                                    name,
+                                    url
+                                });
+
+                                if (error) {
+                                    await Swal.fire("Error", error, "error");
+                                }
+                            });
+                            // #endregion
+                            // #region handle uploadContainer
+                            handle("uploadContainer", async self => {
+                                const files = [...(self.files || [])];
+
+                                if (files.length === 0) return;
+
+                                console.log(files);
+
+                                const formData = new FormData();
+
+                                for (let [index, file] of Object.entries(files)) {
+                                    formData.append(`file-${index}`, file);
+                                }
+
+                                const response = await fetch("api/file/upload", {
+                                    method: "post",
+                                    body: formData
+                                });
+
+                                if (!response.ok) {
+                                    const error = await response.text();
+                                    await Swal.fire("Error", error, "error");
+                                    return;
+                                }
+
+                                const { files: filesResult } = await response.json();
+
+                                console.log(filesResult);
+
+                                let count = 0;
+
+                                for (let file of filesResult) {
+                                    const { url } = file;
+
+                                    const { value: name } = await Swal.fire({
+                                        title: "SUBIR CONTENEDOR",
+                                        input: "text",
+                                        inputPlaceholder: "Nombre del contenedor",
+                                        inputValue: file.filename.replace(file.ext, ""),
+                                        showCancelButton: true,
+                                        // inputValidator: (value) => {
+                                        //     if (!value) {
+                                        //         return 'You need to write something!'
+                                        //     }
+                                        // }
+                                    });
+
+                                    if (!name) {
+                                        await fire("confirmUpload", url);
+                                        continue;
+                                    }
+
+                                    const { error, result } = await post("api/container/upload", {
+                                        name,
+                                        url
+                                    });
+
+                                    if (error) {
+                                        await Swal.fire("Error", error, "error");
+                                        await fire("confirmUpload", url);
+                                        continue;
+                                    }
+
+                                    await fire("addContainer", name);
+
+                                    await fire("confirmUpload", url);
+
+                                    count++;
+                                }
+
+                                const diff = filesResult.length - count;
+
+                                if (diff > 0) {
+                                    await fire("toast", {
+                                        icon: "error",
+                                        title: `No se han podido subir ${diff} contenedores`
+                                    });
+                                }
+                                if (count > 0) {
+                                    await fire("toast", {
+                                        icon: "success",
+                                        title: `Se han subido correctamente ${count} contenedores`
+                                    });
+                                }
+                            });
+                            // #endregion
+                            // #region handle selectFiles
+                            handle("selectFiles", self => {
+                                const input = select("input", self.parentElement);
+                                input.click();
+                            });
+                            // #endregion
+                        </script>
                     </div>
                     <div class="px-2">
                         <button class="bg-green-500 hover:bg-green-700 rounded text-white cursor-pointer py-1 px-2"
-                            @click="addContainer()">
+                            @click="addContainerQuest()">
                             <span>
                                 <i class="fas fa-power-off"></i>
                             </span>
                         </button>
                         <script>
                             // #region handle addContainer
-                            handle("addContainer", async () => {
-                                const { value: name } = await Swal.fire({
-                                    title: "ENCENDER CONTENEDOR",
-                                    input: "text",
-                                    inputValue: "",
-                                    inputPlaceholder: "Nombre del contenedor",
-                                    showCancelButton: true,
-                                    inputValidator: (value) => {
-                                        if (/^\s*$/.test(value)) {
-                                            return "El nombre no es válido";
-                                        }
-                                    }
-                                });
-
-                                if (!name) return;
-
+                            handle("addContainer", async name => {
                                 const { error, result: containers } = await post("api/container/add", {
                                     name
                                 });
@@ -86,6 +178,25 @@
                                 });
 
                                 fire("getContainers");
+                            });
+
+                            handle("addContainerQuest", async () => {
+                                const { value: name } = await Swal.fire({
+                                    title: "ENCENDER CONTENEDOR",
+                                    input: "text",
+                                    inputValue: "",
+                                    inputPlaceholder: "Nombre del contenedor",
+                                    showCancelButton: true,
+                                    inputValidator: (value) => {
+                                        if (/^\s*$/.test(value)) {
+                                            return "El nombre no es válido";
+                                        }
+                                    }
+                                });
+
+                                if (!name) return;
+
+                                await fire("addContainer", name);
                             })
                             // #endregion
                         </script>

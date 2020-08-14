@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2020 Alan Badillo Salas <dragonnomada@gmail.com>
+ * MIT Licensed
+ */
+
 const name = input("name");
 
 const fs = require("fs");
@@ -24,9 +29,9 @@ const stream = fs.createWriteStream(
     path.join(process.cwd(), "temp", filename)
 );
 
-console.log(stream);
+// console.log(stream);
 
-const result = await new Promise((resolve, reject) => {
+await new Promise((resolve, reject) => {
     archive.directory(name, false)
         .on("error", error => reject(error))
         .pipe(stream);
@@ -35,6 +40,6 @@ const result = await new Promise((resolve, reject) => {
     archive.finalize();
 });
 
-console.log(result);
+// console.log(result);
 
 return `/temp/${filename}`;

@@ -3,4 +3,4 @@
  * MIT Licensed
  */
 
-return containers;
+return files.length;
