@@ -87,7 +87,7 @@ const createInstance = (server, app = null) => {
         },
         removeContainer(name) {
             if (!this.containers[name]) throw new Error(`ballena/error: invalid container "${name}"`);
-            this.containers[name].closed = true;
+            // this.containers[name].closed = true;
         },
         createContainer(name, options = {}) {
             options.basePath = options.local ? __dirname : options.basePath || process.cwd();
@@ -101,8 +101,8 @@ const createInstance = (server, app = null) => {
             };
 
             router.use(`/${name}`, (request, response, next) => {
-                if (this.containers[name].closed) {
-                    response.status(404).send(`<pre>Cannot ${request.method} /${name}${request.path} (removed)</pre>`);
+                if (!this.containers[name]) {
+                    response.status(404).send(`<pre>Cannot ${request.method} /${name}${request.path} (closed?)</pre>`);
                     return;
                 }
                 next();
@@ -161,7 +161,7 @@ const createInstance = (server, app = null) => {
                         })();`
                     )(
                         this,
-                        name === options.local ? this.containers : {
+                        options.local ? this.containers : {
                             [name]: this.containers[name]
                         },
                         this.containers[name],
@@ -235,6 +235,7 @@ module.exports = {
         app.use(express.static(path.join(__dirname, "public")));
         app.use("/static", express.static(path.join(__dirname, "static")));
         app.use("/file", express.static(path.join(process.cwd(), "file")));
+        app.use("/temp", express.static(path.join(process.cwd(), "temp")));
         app.use("/cdn", express.static(path.join(process.cwd(), "cdn")));
         app.use(cors());
         app.use(bodyParser.json());
@@ -262,7 +263,7 @@ module.exports = {
         const server = https.createServer(options, app);
 
         server.app = app;
-        server.protocol = "http";
+        server.protocol = "https";
         server.require = this.require;
 
         return this.createInstance(server);
