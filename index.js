@@ -3,7 +3,7 @@
  * MIT Licensed
  */
 
-const version = "v1.0.8";
+const version = "v1.0.9";
 
 const fs = require("fs");
 const path = require("path");
@@ -145,6 +145,37 @@ const createInstance = (server, app = null) => {
                 next();
             });
             router.use(`/${name}`, express.static(path.join(options.basePath, name, "view")));
+            router.use(`/${name}/view/`, async (request, respose, next) => {
+                const viewName = request.path.replace(/\/$/g, "/index.html");
+                const ext = (viewName.match(/\.\w+$/) || [])[0] || ".html";
+                const filename = viewName.replace(/^\/|\.\w+$/g, "");
+
+                const code = await readFileAsync(path.join(options.basePath, name, "view", `/${filename}${ext}`)).catch(() => {
+                    return null;
+                });
+
+                if (!code) {
+                    respose.send({
+                        ballena: version,
+                        container: name,
+                        view: filename,
+                        ext,
+                        exists: true,
+                        error: `ballena/error: view ${name}/${filename}${ext} is not exists`,
+                        result: null
+                    });
+                    return;
+                }
+
+                respose.send({
+                    ballena: version,
+                    container: name,
+                    view: filename,
+                    exists: true,
+                    error: null,
+                    result: code.replace(/\r/g, "")
+                });
+            });
             router.use(`/${name}/api/`, async (request, respose, next) => {
                 const files = await fileUploadHandler(request);
 
@@ -153,7 +184,7 @@ const createInstance = (server, app = null) => {
                 const filename = apiName.replace(/^\//, "");
 
                 const protocol = {
-                    ballena: "v1.0",
+                    ballena: version,
                     container: name,
                     api: filename,
                     exists: true,
