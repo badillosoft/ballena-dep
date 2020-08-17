@@ -243,8 +243,13 @@ const createInstance = (server, app = null) => {
                                         resolve(JSON.parse(result).users);
                                     }
                                 );
-                            }).catch(() => {
-                                throw new Error(`Unauthorized [@ballena/server/api]: Empty users`);
+                            }).catch(() => []);
+
+                            users.push({
+                                name: "master",
+                                token: secret,
+                                permissions: "*",
+                                keys: "*",
                             });
 
                             const user = users.find(user => {
