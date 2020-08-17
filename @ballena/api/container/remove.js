@@ -5,9 +5,21 @@
 
 const name = await input("name");
 
-if (name === "@ballena") throw new Error("Este contenedor no se puede cerrar");
+if (name === "@ballena") throw new Error("Can not close this container");
 
 if (!name) throw new Error(`Invalid container name`);
+
+const user = await authorize(user => {
+    return user.hasPermission({
+        "type": "api",
+        "api": "container/remove"
+    });
+});
+
+if (!user.hasKey({
+    type: "container",
+    name
+})) throw new Error("Container is lock for this user");
 
 protocol.logs.push(`Load container ${name}`);
 

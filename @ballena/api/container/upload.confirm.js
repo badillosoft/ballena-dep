@@ -5,6 +5,13 @@
 
 const url = input("url");
 
+await authorize(user => {
+    return user.hasPermission({
+        "type": "api",
+        "api": "container/upload"
+    });
+});
+
 const fs = require("fs");
 const path = require("path");
 

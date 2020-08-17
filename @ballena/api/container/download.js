@@ -3,9 +3,21 @@
  * MIT Licensed
  */
 
-const zipContainer = require("./lib/zipContainer");
-
 const name = input("name");
+
+const user = await authorize(user => {
+    return user.hasPermission({
+        "type": "api",
+        "api": "container/download"
+    });
+});
+
+if (!user.hasKey({
+    type: "container",
+    name
+})) throw new Error("Container is lock for this user");
+
+const zipContainer = require("./lib/zipContainer");
 
 const randomToken = (n = 64, radix = 32) => {
     let token = "";

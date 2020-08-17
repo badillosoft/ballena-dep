@@ -53,7 +53,7 @@ const createInstance = (server, app = null) => {
             await new Promise(resolve => {
                 fs.mkdir(".ballena", { recursive: true }, (error, result) => resolve({ error, result }))
             });
-            
+
             const containers = await new Promise((resolve, reject) => {
                 fs.readFile(
                     path.join(process.cwd(), ".ballena", "containers.json"),
@@ -192,6 +192,7 @@ const createInstance = (server, app = null) => {
                         "request",
                         "response",
                         "next",
+                        "authorize",
                         "lib",
                         ...Object.keys(this.lib),
                         `return (async () => {
@@ -206,18 +207,83 @@ const createInstance = (server, app = null) => {
                         protocol,
                         input,
                         files,
-                        (name, ...params) => {
-                            if (name === "ballena") {
-                                return protocol;
+                        (name, token, ...params) => {
+                            if (options.local) {
+                                if (name === "ballena") return protocol;
+                                return require(name, ...params);
                             }
-                            return (options.local ? require : token => {
-                                if (token !== secret) throw new Error(`Unauthorized [@ballena/server/require]`);
-                                return this.require
-                            })(name, ...params);
+                            if (token !== secret) throw new Error(`Unauthorized [@ballena/server/require]`);
+                            if (name === "ballena") return protocol;
+                            return this.require(name, ...params);
                         },
                         request,
                         respose,
                         next,
+                        async handler => {
+                            const userToken = input("token") || "";
+
+                            const [name, token] = userToken.split(".");
+
+                            handler = handler || (() => {
+                                if (token !== secret) throw new Error(`Unauthorized [@ballena/server/api]: Invalid secret`);
+                            });
+
+                            await new Promise(resolve => {
+                                fs.mkdir(".ballena", { recursive: true }, (error, result) => resolve({ error, result }))
+                            });
+                            
+                            const users = await new Promise((resolve, reject) => {
+                                fs.readFile(
+                                    path.join(process.cwd(), ".ballena", "users.json"),
+                                    (error, result) => {
+                                        if (error) {
+                                            reject(error);
+                                            return;
+                                        }
+                                        resolve(JSON.parse(result).users);
+                                    }
+                                );
+                            }).catch(() => {
+                                throw new Error(`Unauthorized [@ballena/server/api]: Empty users`);
+                            });
+
+                            const user = users.find(user => {
+                                return user.name === name && user.token === token;
+                            });
+
+                            if (!user) throw new Error(`Unauthorized [@ballena/server/api]: Invalid token`);
+
+                            user.hasPermission = protocol => {
+                                if (user.permissions === "*") return true;
+                                return user.permissions.some(permissionProtocol => {
+                                    for (let [key, value] of Object.entries(protocol || {})) {
+                                        if (permissionProtocol[key] !== value) return false;
+                                    }
+                                    return true;
+                                })
+                            };
+                            
+                            user.hasKey = protocol => {
+                                if (user.keys === "*") return true;
+                                return user.keys.some(keyProtocol => {
+                                    for (let [key, value] of Object.entries(protocol || {})) {
+                                        if (keyProtocol[key] !== value) return false;
+                                    }
+                                    return true;
+                                })
+                            };
+
+                            let authorized = null;
+
+                            try {
+                                authorized = await handler(user)
+                            } catch (error) {
+                                throw new Error(`Unauthorized [@ballena/server/api]: ${error}`);
+                            }
+                            if (!authorized) throw new Error(`Unauthorized [@ballena/server/api]`);
+
+                            return user;
+                        },
                         this.lib,
                         ...Object.values(this.lib),
                     ).catch(error => {

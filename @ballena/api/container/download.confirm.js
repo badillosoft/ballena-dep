@@ -5,6 +5,18 @@
 
 const name = input("name");
 
+const user = await authorize(user => {
+    return user.hasPermission({
+        "type": "api",
+        "api": "container/download"
+    });
+});
+
+if (!user.hasKey({
+    type: "container",
+    name
+})) throw new Error("Container is lock for this user");
+
 const fs = require("fs");
 const path = require("path");
 
