@@ -3,6 +3,8 @@
  * MIT Licensed
  */
 
+const version = "v1.0.8";
+
 const fs = require("fs");
 const path = require("path");
 const http = require("http");
@@ -72,7 +74,9 @@ const createInstance = (server, app = null) => {
             }
         },
         async start(port = 4000, host = "0.0.0.0", domain = "localhost") {
-            console.log(`@ballena/secret`, secret);
+            console.log("@ballena/server", version);
+
+            console.log("Secret:", secret);
 
             this.port = port;
             this.host = host;
