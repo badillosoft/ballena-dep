@@ -30,6 +30,8 @@ const readFileAsync = (route, encoding = "utf-8", options = {}) => new Promise((
     fs.readFile(route, { encoding, ...options }, handleResult(resolve, reject));
 });
 
+let secret = null;
+
 const createInstance = (server, app = null) => {
     return {
         lib: {},
@@ -65,12 +67,13 @@ const createInstance = (server, app = null) => {
                 );
             }).catch(() => ({}));
 
-            this.containers = {
-                ...this.containers,
-                ...containers,
-            };
+            for (let container of Object.keys(containers)) {
+                this.addContainer(container);
+            }
         },
         async start(port = 4000, host = "0.0.0.0", domain = "localhost") {
+            console.log(`@ballena/secret`, secret);
+
             this.port = port;
             this.host = host;
             this.domain = domain;
@@ -101,7 +104,9 @@ const createInstance = (server, app = null) => {
             await handle(this);
             await this.start(this.port, this.host, this.domain);
         },
-        addPanel() {
+        addPanel(masterCode) {
+            secret = masterCode || Math.random().toString(32).slice(2);
+
             const container = this.createContainer("@ballena", {
                 local: true
             });
@@ -205,7 +210,10 @@ const createInstance = (server, app = null) => {
                             if (name === "ballena") {
                                 return protocol;
                             }
-                            return (options.local ? require : this.require)(name, ...params);
+                            return (options.local ? require : token => {
+                                if (token !== secret) throw new Error(`Unauthorized [@ballena/server/require]`);
+                                return this.require
+                            })(name, ...params);
                         },
                         request,
                         respose,
