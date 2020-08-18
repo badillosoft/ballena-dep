@@ -3,7 +3,7 @@
  * MIT Licensed
  */
 
-const version = "v1.0.9";
+const version = "v1.0.10";
 
 const fs = require("fs");
 const path = require("path");
@@ -415,6 +415,21 @@ module.exports = {
         server.require = this.require;
 
         return this.createInstance(server);
+    },
+    quickServer(config = {}) {
+        let server = null;
+
+        if (config.options) {
+            server = this.httpsServer(options);
+        } else {
+            server = this.httpServer();
+        }
+
+        const masterCode = config.masterCode || process.env.MASTER_TOKEN;
+
+        server.addPanel(masterCode);
+
+        server.start(config.port, config.host, config.domain);
     },
     output() {
         console.warn(`ballena/output: single mode is not supported`);
