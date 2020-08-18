@@ -3,7 +3,7 @@
  * MIT Licensed
  */
 
-const version = "v1.0.11";
+const version = "v1.0.12";
 
 const fs = require("fs");
 const path = require("path");
@@ -382,7 +382,7 @@ module.exports = {
 
         app.use(express.static(path.join(__dirname, "public")));
         app.use("/static", express.static(path.join(__dirname, "static")));
-        app.use("/file", express.static(path.join(process.cwd(), "file")));
+        app.use("/file", express.static(path.join(process.cwd(), "files")));
         app.use("/temp", express.static(path.join(process.cwd(), "temp")));
         app.use("/cdn", express.static(path.join(process.cwd(), "cdn")));
         app.use(cors());
