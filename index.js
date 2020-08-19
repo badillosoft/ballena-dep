@@ -380,9 +380,9 @@ module.exports = {
             response.send(`Hello ${request.query.name || "you"}`);
         });
 
-        app.use(express.static(path.join(__dirname, "public")));
+        app.use(express.static(path.join(process.cwd(), "public")));
         app.use("/static", express.static(path.join(__dirname, "static")));
-        app.use("/file", express.static(path.join(process.cwd(), "files")));
+        app.use("/files", express.static(path.join(process.cwd(), "files")));
         app.use("/temp", express.static(path.join(process.cwd(), "temp")));
         app.use("/cdn", express.static(path.join(process.cwd(), "cdn")));
         app.use(cors());
