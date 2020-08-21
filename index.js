@@ -3,7 +3,7 @@
  * MIT Licensed
  */
 
-const version = "v1.0.14";
+const version = "v1.0.15";
 
 const fs = require("fs");
 const path = require("path");
