@@ -3,7 +3,7 @@
  * MIT Licensed
  */
 
-const version = "v1.0.15";
+const version = "v1.0.16";
 
 const fs = require("fs");
 const path = require("path");
@@ -343,6 +343,8 @@ const createInstance = (server, app = null) => {
                 }
 
                 delete protocol.handler;
+
+                if (protocol.aborted) return;
 
                 try {
                     respose.send(protocol);
