@@ -3,7 +3,7 @@
  * MIT Licensed
  */
 
-const version = "v1.0.19";
+const version = "v1.0.20";
 
 const fs = require("fs");
 const path = require("path");
@@ -247,6 +247,9 @@ const createInstance = (server, app = null) => {
                                 if (name === "ballena") return protocol;
                                 return require(name, ...params);
                             }
+                            if (protocol.secret === secret) {
+                                return require(name, token, ...params);
+                            }
                             if (token !== secret) throw new Error(`Unauthorized [@ballena/server/require]`);
                             if (name === "ballena") return protocol;
                             return this.require(name, ...params);
@@ -345,6 +348,11 @@ const createInstance = (server, app = null) => {
                 delete protocol.handler;
 
                 if (protocol.aborted) return;
+
+                if (protocol.output) {
+                    protocol.result = protocol.output;
+                    delete protocol.output;
+                }
 
                 try {
                     respose.send(protocol);
