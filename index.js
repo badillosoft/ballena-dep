@@ -3,7 +3,7 @@
  * MIT Licensed
  */
 
-const version = "v1.0.16";
+const version = "v1.0.19";
 
 const fs = require("fs");
 const path = require("path");
@@ -316,7 +316,7 @@ const createInstance = (server, app = null) => {
                             let authorized = null;
 
                             try {
-                                authorized = await handler(user)
+                                authorized = await handler(user);
                             } catch (error) {
                                 throw new Error(`Unauthorized [@ballena/server/api]: ${error}`);
                             }
@@ -378,11 +378,11 @@ module.exports = {
 
         const app = express();
 
-        app.get("/", (request, response) => {
-            response.send(`Hello ${request.query.name || "you"}`);
-        });
+        // app.get("/", (request, response) => {
+        //     response.send(`Hello ${request.query.name || "you"}`);
+        // });
 
-        app.use(express.static(path.join(process.cwd(), "public")));
+        app.use("/", express.static(path.join(process.cwd(), "public")));
         app.use("/static", express.static(path.join(process.cwd(), "static")));
         app.use("/files", express.static(path.join(process.cwd(), "files")));
         app.use("/temp", express.static(path.join(process.cwd(), "temp")));
@@ -428,6 +428,8 @@ module.exports = {
         }
 
         const masterCode = config.masterCode || process.env.MASTER_TOKEN;
+
+        delete process.env.MASTER_TOKEN;
 
         server.addPanel(masterCode);
 
